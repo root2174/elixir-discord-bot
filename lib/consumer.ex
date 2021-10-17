@@ -8,33 +8,22 @@ defmodule Calangobot.Consumer do
 
   def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
     cond do
-      msg.content == "!ping" -> Api.create_message(msg.channel_id, "Pong")
-      msg.content == "!tempo" -> Api.create_message(msg.channel_id, "Uso do comando !tempo errado. Use !tempo **cidade**")
-      String.starts_with?(msg.content, "!tempo ") -> weather(msg)
+      msg.content == "!word" -> Api.create_message(msg.channel_id, "Wrong usage of the command !word. Use !word **word**")
+      msg.content == "!crypto" -> Api.create_message(msg.channel_id, "Wrong usage of the command !crypto. Use !crypto **currency** with currency being the three word letter for the cryptocurrency. EG: !crypto BTC")
+      msg.content == "!holidays" -> Api.create_message(msg.channel_id, "Wrong usage of the command !holidays. Use !holidays **country** month's number, with country being the ISO 3166-1 Alpha 2 code for that country. Eg: !holidays BR 1 to get a full list of holidays on January in Brazil.")
+      msg.content == "!cep" -> Api.create_message(msg.channel_id, "Wrong usage of the command !cep. Use !cep **cep number**")
+
       String.starts_with?(msg.content, "!word ") -> word(msg)
       String.starts_with?(msg.content, "!crypto ") -> crypto(msg)
       String.starts_with?(msg.content, "!funfact") -> fun_fact(msg)
-      String.starts_with?(msg.content, "!funfact ") -> fun_fact(msg)
+      String.starts_with?(msg.content, "!holidays ") -> holidays(msg)
+      String.starts_with?(msg.content, "!cep ") -> cep(msg)
       true -> :ok
     end
   end
 
   def handle_event(_) do
     :ok
-  end
-
-  defp weather(msg) do
-    aux = String.split(msg.content, " ", parts: 2)
-    city = Enum.fetch!(aux, 1)
-    api_url = "api.openweathermap.org/data/2.5/weather?q=#{city}&units=metric&appid=67b6796050047eb9e9a9025000b5fc59"
-    resp = HTTPoison.get!(api_url)
-    json = Poison.decode!(resp.body)
-    temp = json["main"]["temp"]
-
-    case resp.status_code do
-      200 -> Api.create_message(msg.channel_id, "A temperatura em #{city} é #{temp}°C")
-      404 -> Api.create_message!(msg.channel_id, "A cidade #{city} não foi encontrada")
-    end
   end
 
   defp word(msg) do
@@ -85,6 +74,56 @@ defmodule Calangobot.Consumer do
         fact = json["data"]["fact"]
         Api.create_message!(msg.channel_id, fact)
       false -> Api.create_message!(msg.channel_id, "Joke not found.")
+    end
+  end
+
+  defp holidays(msg) do
+    aux = String.split(msg.content, " ", parts: 3)
+    country = Enum.fetch!(aux, 1)
+    month = Enum.fetch!(aux, 2)
+    current_year = Date.utc_today.year
+    api_url = "https://calendarific.com/api/v2/holidays?&api_key=079be43cfec4c3cfa9a4c3e3bdcd35eab2f045e8&country=#{country}&year=#{current_year}&month=#{month}"
+    resp = HTTPoison.get!(api_url)
+    json = Poison.decode!(resp.body)
+
+    holidays = json["response"]["holidays"]
+
+    if Enum.empty?(holidays) do
+      Api.create_message!(msg.channel_id, "No holidays this month!\nUse !holidays **country** month's number, with country being the ISO 3166-1 Alpha 2 code for that country. Eg: !holidays BR 1 to get a full list of holidays on January in Brazil.")
+    else
+    new_word = Enum.map_join(
+      holidays,
+      "\n",
+      fn holiday ->
+        day = holiday["date"]["datetime"]["day"]
+        month = holiday["date"]["datetime"]["month"]
+        year = holiday["date"]["datetime"]["year"]
+        date = "#{day}/#{month}/#{year}"
+
+        name = holiday["name"]
+
+        "#{name} - Date: #{date}"
+    end
+    )
+    Api.create_message!(msg.channel_id, "#{new_word}")
+    end
+  end
+
+  defp cep(msg) do
+    aux = String.split(msg.content, " ", parts: 2)
+    cep = Enum.fetch!(aux, 1)
+    api_url = "https://api.postmon.com.br/v1/cep/#{cep}"
+    try do
+      resp = HTTPoison.get!(api_url)
+      json = Poison.decode!(resp.body)
+
+      logradouro = json["logradouro"]
+      bairro = json["bairro"]
+      estado = json["estado"]
+      cidade = json["cidade"]
+      Api.create_message!(msg.channel_id, "CEP #{cep} - Logradouro: #{logradouro} - Bairro: #{bairro} - Cidade: #{cidade} - Estado: #{estado}")
+    rescue
+      _ -> Api.create_message!(msg.channel_id, "CEP #{cep} não foi encontrado")
     end
 
   end

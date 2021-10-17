@@ -1,21 +1,11 @@
 # Calangobot
 
-**TODO: Add description**
+## Integrantes
+- Lucas Magalhães do Nascimento - 1810502
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `calangobot` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:calangobot, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/calangobot](https://hexdocs.pm/calangobot).
-
+## Comandos
+- !word **word** - procura a definição e o significado de alguma palavra em inglês. EX: !word potato
+- !crypto **currency** - procura em tempo real o valor de alguma cryptomoeda. EX: !crypto BTC
+- !funfact - o bot manda um fato aleatório.
+- !cep **cep** - procura algumas informações sobre o cep digitado. EX: !cep 60824235
+- !holidays **country** **month's number representation** - procura todos os feriados de um pais em um determinado mês. EX: !holidays BR 1
